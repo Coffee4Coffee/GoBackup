@@ -47,7 +47,7 @@ func getValidTime(dHour uint8) (time.Time, error) {
 	return time.Date(t.Year(), t.Month(), t.Day(), int(dHour), 0, 0, t.Nanosecond(), t.Location()).Add(24 * time.Hour), nil
 }
 
-// TODO: Change to robocopy down the line (this will exclude Win7 users). This allows for more less backup work and more detailed error messages
+// TODO: Change to robocopy down the line
 func createToastScript(src, dest string) string {
 	toastyString := fmt.Sprintf(`
 		$ErrorActionPreference = 'Stop';
@@ -147,7 +147,6 @@ func createAction(src, dest string, overwrite bool) (taskmaster.ExecAction, erro
 	r := regexp.MustCompile(`[^\\]+$`)
 	folder := r.FindString(src)
 
-	// TODO: powershell with path or without??? (setting it might be better, but we need to chek for the existence of the powershell.exe then)
 	// pwsPath := `\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`
 	systemDrive := os.Getenv("SYSTEMDRIVE")
 	toastCmd := createToastScript(src, dest)

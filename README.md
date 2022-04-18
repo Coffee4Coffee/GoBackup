@@ -10,6 +10,5 @@ Since the windows task scheduler is the basis for this app, no other platform be
 Remove the .exe and delete all scheduled backup tasks either through the app or directly through the task scheduler.
 
 ## Known issues
-- The folder dialogs crash the app when not selecting a folder (e.g. pressing Cancel)
 - The app currently needs to be started with admin rights to work correctly
 - Scheduled backups have a maximum period of 1 year

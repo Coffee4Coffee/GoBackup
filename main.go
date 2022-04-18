@@ -45,7 +45,7 @@ const (
 func MessageBox(caption, text string, flags uint) int {
 	hwnd := uintptr(0)
 	ret, _, _ := procMessageBox.Call(
-		uintptr(hwnd),
+		hwnd,
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(text))),
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(caption))),
 		uintptr(flags))
@@ -65,10 +65,7 @@ func handleError(err error) int {
 }
 
 func selectFolder(src bool) {
-	directory, err := dialog.Directory().Title("Select the folder").Browse()
-	if err != nil {
-		panic(err)
-	}
+	directory, _ := dialog.Directory().Title("Select the folder").Browse()
 	if src {
 		srcDir = directory
 	} else {
@@ -89,15 +86,12 @@ func resetForm() {
 }
 
 func initializeOptions() {
-	// If we don't do this, the table will be hidden
-	tableData = append(tableData, g.TableRow())
-
 	// Create Task (Form ready)
 	disabled = true
 
 	setDayOption()
 
-	// Days of the month, we ignore the last days for now (I have no idea how task scheduler (or taskmaster for the matter) handles these days)
+	// taskmaster.LastDayOfTheMonth does not work currently, leave it out
 	monthlyDays = make([]string, 31)
 	for i := 0; i < 31; i++ {
 		monthlyDays[i] = strconv.Itoa(i + 1)
@@ -229,7 +223,6 @@ func createScheduledBackup() {
 		os.Exit(1)
 	}
 
-	// TODO: Disable all UI elements that can initiate something bad OR lock the whole app until done
 	newTask, err := scheduler.CreateScheduledTask(
 		scheduler.TriggerType(radioOp),
 		uint8(monthlyDaySelected),

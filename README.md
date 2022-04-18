@@ -6,7 +6,7 @@ A simple tool to schedule your backups daily, weekly or monthly. Since it uses t
 Since the windows task scheduler is the basis for this app, no other platform besides windows is currently supported.
 
 
-## Uninstallation
+## Uninstall
 Remove the .exe and delete all scheduled backup tasks either through the app or directly through the task scheduler.
 
 ## Known issues

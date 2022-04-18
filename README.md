@@ -7,7 +7,7 @@ Since the windows task scheduler is the basis for this app, no other platform be
 
 
 ## Uninstall
-Remove the .exe and delete all scheduled backup tasks either through the app or directly through the task scheduler.
+Delete all scheduled backup tasks either through the app or directly through the task scheduler and remove the GoBackup.exe.
 
 ## Known issues
 - The app currently needs to be started with admin rights to work correctly

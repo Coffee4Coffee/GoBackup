@@ -60,7 +60,7 @@ func handleError(err error) int {
 	case *scheduler.ErrRetrieveTaskFolderFailure, *scheduler.ErrRetrieveTasksFailure:
 		return MessageBox("Fetch Error", "Could not fetch the scheduled backup tasks\nDo you want to try again?", MB_RETRYCANCEL|MB_ICONERROR|MB_DEFBUTTON2)
 	default:
-		return MessageBox("Unknown Error", "An unknown error occured\nPlease restart the application and try again", MB_ICONERROR)
+		return MessageBox("Unknown Error", "An unknown error occurred\nPlease restart the application and try again", MB_ICONERROR)
 	}
 }
 
@@ -215,11 +215,11 @@ func deleteScheduledBackup(index int) {
 
 func createScheduledBackup() {
 	if _, err := os.Stat(srcDir); os.IsNotExist(err) {
-		MessageBox("Unknown Error", "An unknown error occured\nPlease restart the application and try again", MB_ICONERROR)
+		MessageBox("Unknown Error", "An unknown error occurred\nPlease restart the application and try again", MB_ICONERROR)
 		os.Exit(1)
 	}
 	if _, err := os.Stat(destDir); os.IsNotExist(err) {
-		MessageBox("Unknown Error", "An unknown error occured\nPlease restart the application and try again", MB_ICONERROR)
+		MessageBox("Unknown Error", "An unknown error occurred\nPlease restart the application and try again", MB_ICONERROR)
 		os.Exit(1)
 	}
 

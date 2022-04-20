@@ -22,9 +22,10 @@ const (
 const fPath = "\\GoBackup"
 
 const (
-	toastTemplate                      = "ToastText02"
-	appTitle                           = "GoBackup"
-	toastExpirationTimeInMinutes uint8 = 5
+	toastTemplate                    = "ToastText02"
+	appTitle                         = "GoBackup"
+	toastExpirationTimeInMinutes int = 5
+	backupLimit                      = 0
 )
 
 func parseTaskPath(src, dest string) string {
@@ -45,53 +46,6 @@ func getValidTime(dHour uint8) (time.Time, error) {
 	}
 	// Return time for the next day if already in the past
 	return time.Date(t.Year(), t.Month(), t.Day(), int(dHour), 0, 0, t.Nanosecond(), t.Location()).Add(24 * time.Hour), nil
-}
-
-// TODO: Change to robocopy down the line
-func createToastScript(src, dest string) string {
-	toastyString := fmt.Sprintf(`
-		$ErrorActionPreference = 'Stop';
-		[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null; 
-		$template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::%v); 
-		$toastXml = [xml] $template.GetXml(); $toastXml.GetElementsByTagName('text')[0].AppendChild($toastXml.CreateTextNode($notificationTitle)) > $null; 
-		$toastXml.GetElementsByTagName('text')[1].AppendChild($toastXml.CreateTextNode($notificationContent)) > $null; 
-		$actionsElement = $toastXml.CreateElement('actions'); $actionElement = $toastXml.CreateElement('action'); 
-		$actionElement.SetAttribute('content', 'Dismiss'); $actionElement.SetAttribute('arguments', 'dismiss'); 
-		$actionElement.SetAttribute('activationType', 'system'); 
-		$actionsElement.AppendChild($actionElement); 
-		$toastXml.DocumentElement.AppendChild($actionsElement); 
-		$xml = New-Object Windows.Data.Xml.Dom.XmlDocument; 
-		$xml.LoadXml($toastXml.OuterXml); 
-		$toast = [Windows.UI.Notifications.ToastNotification]::new($xml); 
-		$toast.Tag = '%[2]v'; 
-		$toast.Group = '%[2]v'; 
-		$toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes(%[3]v); 
-		if($actioncentre) { $toast.SuppressPopup = $true; };
-		$notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('%[2]v'); 
-		$notifier.Show($toast);
-	`, toastTemplate, appTitle, toastExpirationTimeInMinutes)
-	return fmt.Sprintf(`
-		if ( $LASTEXITCODE -EQ 0 ) {
-			$notificationTitle = [DateTime]::Now.ToShortTimeString() + ': ' + 'Your scheduled backup was successful'; 
-			$notificationContent = 'You folder %[1]v has been backed up to %[2]v'; 
-			`+toastyString+`
-		};
-		if( $LASTEXITCODE -EQ 1 ) {
-			$notificationTitle = [DateTime]::Now.ToShortTimeString() + ': ' + 'Your scheduled backup has failed'; 
-			$notificationContent = 'You folder %[1]v has not been backed up to %[2]v. No files were found to copy.'; 
-			`+toastyString+`
-		};
-		if( $LASTEXITCODE -EQ 4 ) {
-			$notificationTitle = [DateTime]::Now.ToShortTimeString() + ': ' + 'Your scheduled backup has failed'; 
-			$notificationContent = 'You folder %[1]v has not been backed up to %[2]v. There is not enough memory or disk space.'; 
-			`+toastyString+`
-		};
-		if( $LASTEXITCODE -EQ 5 ) {
-			$notificationTitle = [DateTime]::Now.ToShortTimeString() + ': ' + 'Your scheduled backup has failed'; 
-			$notificationContent = 'You folder %[1]v has not been backed up to %[2]v. A disk write error occurred.'; 
-			`+toastyString+`
-		};
-	 `, src, dest)
 }
 
 func createTrigger(tType TriggerType, dMonth, dWeek, dHour uint8) (taskmaster.Trigger, error) {
@@ -149,23 +103,15 @@ func createAction(src, dest string, overwrite bool) (taskmaster.ExecAction, erro
 
 	// pwsPath := `\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`
 	systemDrive := os.Getenv("SYSTEMDRIVE")
-	toastCmd := createToastScript(src, dest)
+	pwScript := createPwScript(src, dest, folder, appTitle, backupLimit, toastExpirationTimeInMinutes, overwrite)
 	if len(systemDrive) == 0 {
 		return taskmaster.ExecAction{}, fmt.Errorf("createAction: failed to retrieve systemdrive: %w", errors.New("SYSTEMDRIVE not found"))
 	}
-	xcopyCmd := fmt.Sprintf(`xcopy %v %v\%v /e /y /i /h /o /k /x;`, src, dest, folder)
-	if !overwrite {
-		renameCmd := `cd ` + dest + `; ` + `ren ` + folder + ` "` + folder + ` %date:~0,4%%date:~5,2%%date:~8,2%_%time:~0,2%%time:~3,2%%time:~6,2%` + `";`
-		return taskmaster.ExecAction{
-			Path: `Powershell`,
-			Args: xcopyCmd + toastCmd + renameCmd,
-		}, nil
-	} else {
-		return taskmaster.ExecAction{
-			Path: `Powershell`,
-			Args: xcopyCmd + toastCmd,
-		}, nil
-	}
+
+	return taskmaster.ExecAction{
+		Path: `Powershell`,
+		Args: pwScript,
+	}, nil
 }
 
 func GetAllScheduledTasks() (taskmaster.RegisteredTaskCollection, error) {

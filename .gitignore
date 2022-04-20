@@ -17,8 +17,5 @@
 # Go workspace file
 go.work
 
-# Scripts
-*.ps1
-
 # Other
 *.txt

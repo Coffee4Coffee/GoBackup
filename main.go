@@ -230,7 +230,7 @@ func createScheduledBackup() {
 		uint8(hourSelected),
 		srcDir,
 		destDir,
-		!overwrite,
+		overwrite,
 	)
 	if err != nil {
 		if messageBoxReturnCode := handleError(err); messageBoxReturnCode == IDRETRY {

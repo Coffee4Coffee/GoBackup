@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/rickb777/date/period"
@@ -122,7 +123,9 @@ func GetAllScheduledTasks() (taskmaster.RegisteredTaskCollection, error) {
 	defer conn.Disconnect()
 
 	tFolder, err := conn.GetTaskFolder(fPath)
-	if err != nil {
+	// We only want to ignore this error when initially launching the app, when the folder does not exist yet
+	// Stopgap measure, TODO: extend taskmaster with better error handling, or implement taskmaster.taskFolderExist
+	if err != nil && !strings.Contains(err.Error(), "error getting folder") {
 		return taskmaster.RegisteredTaskCollection{}, &ErrRetrieveTaskFolderFailure{Inner: err, Message: "failed to find task folder"}
 	}
 
@@ -171,7 +174,7 @@ func CreateScheduledTask(tType TriggerType, dMonth, dWeek, dHour uint8, src, des
 	return createdTask, nil
 }
 
-func DeleteScheduledTask(tName string) error {
+func DeleteScheduledTask(tName string, deleteFolder bool) error {
 	conn, err := taskmaster.Connect()
 	if err != nil {
 		return &ErrConnectSchedulerFailure{Inner: err, Message: "failed to connect to task scheduler"}
@@ -181,6 +184,13 @@ func DeleteScheduledTask(tName string) error {
 	err = conn.DeleteTask(fPath + "\\" + tName)
 	if err != nil {
 		return &ErrDeleteTaskFailure{Inner: err, Message: "Failed to delete task"}
+	}
+
+	if deleteFolder {
+		success, err := conn.DeleteFolder(fPath, false)
+		if err != nil || success != true {
+			return &ErrDeleteTaskFolderFailure{Inner: err, Message: "Failed to delete task folder"}
+		}
 	}
 	return nil
 }

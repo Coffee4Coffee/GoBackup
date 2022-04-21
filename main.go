@@ -59,6 +59,12 @@ func handleError(err error) int {
 		return MessageBox("Connection Error", "Could not connect to the windows task scheduler\nDo you want to try again?", MB_RETRYCANCEL|MB_ICONERROR|MB_DEFBUTTON2)
 	case *scheduler.ErrRetrieveTaskFolderFailure, *scheduler.ErrRetrieveTasksFailure:
 		return MessageBox("Fetch Error", "Could not fetch the scheduled backup tasks\nDo you want to try again?", MB_RETRYCANCEL|MB_ICONERROR|MB_DEFBUTTON2)
+	case *scheduler.ErrCreateTaskFailure:
+		return MessageBox("Create Error", "Could not create the scheduled backup task\nDo you want to try again?", MB_RETRYCANCEL|MB_ICONERROR|MB_DEFBUTTON2)
+	case *scheduler.ErrDeleteTaskFailure:
+		return MessageBox("Delete Error", "Could not delete the scheduled backup task\nDo you want to try again?", MB_RETRYCANCEL|MB_ICONERROR|MB_DEFBUTTON2)
+	case *scheduler.ErrDeleteTaskFolderFailure:
+		return MessageBox("Delete Error", "Could not delete the task folder\nDo you want to try again?", MB_RETRYCANCEL|MB_ICONERROR|MB_DEFBUTTON2)
 	default:
 		return MessageBox("Unknown Error", "An unknown error occurred\nPlease restart the application and try again", MB_ICONERROR)
 	}
@@ -124,7 +130,7 @@ func getTriggerIntervalType(tr taskmaster.Trigger) string {
 }
 
 func updateTable() {
-	if len(tableData) > 0 && len(scheduledTasks) > 0 {
+	if len(tableData) != len(scheduledTasks) {
 		tableData = tableData[:0]
 	}
 	for index, _task := range scheduledTasks {
@@ -201,7 +207,11 @@ func setDayOption() g.Layout {
 }
 
 func deleteScheduledBackup(index int) {
-	err := scheduler.DeleteScheduledTask(scheduledTasks[index].Name)
+	deleteFolder := false
+	if len(scheduledTasks) == 1 {
+		deleteFolder = true
+	}
+	err := scheduler.DeleteScheduledTask(scheduledTasks[index].Name, deleteFolder)
 	if err != nil {
 		if messageBoxReturnCode := handleError(err); messageBoxReturnCode == IDRETRY {
 			deleteScheduledBackup(index)

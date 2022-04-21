@@ -130,7 +130,7 @@ func getTriggerIntervalType(tr taskmaster.Trigger) string {
 }
 
 func updateTable() {
-	if len(tableData) != len(scheduledTasks) {
+	if len(tableData) > 0 {
 		tableData = tableData[:0]
 	}
 	for index, _task := range scheduledTasks {
@@ -215,25 +215,27 @@ func deleteScheduledBackup(index int) {
 	if err != nil {
 		if messageBoxReturnCode := handleError(err); messageBoxReturnCode == IDRETRY {
 			deleteScheduledBackup(index)
-		} else if messageBoxReturnCode != IDRETRY && messageBoxReturnCode != IDCANCEL {
+		} else if messageBoxReturnCode == IDCANCEL {
+			return
+		} else {
 			os.Exit(1)
 		}
+	} else {
+		initializeTable()
 	}
-	scheduledTasks = append(scheduledTasks[:index], scheduledTasks[index+1:]...)
-	updateTable()
 }
 
 func createScheduledBackup() {
 	if _, err := os.Stat(srcDir); os.IsNotExist(err) {
-		MessageBox("Unknown Error", "An unknown error occurred\nPlease restart the application and try again", MB_ICONERROR)
+		MessageBox("Directory Error", "The given src directoy does not exist\nPlease restart the application and try again", MB_ICONERROR)
 		os.Exit(1)
 	}
 	if _, err := os.Stat(destDir); os.IsNotExist(err) {
-		MessageBox("Unknown Error", "An unknown error occurred\nPlease restart the application and try again", MB_ICONERROR)
+		MessageBox("Directory Error", "The given dest directoy does not exist\nPlease restart the application and try again", MB_ICONERROR)
 		os.Exit(1)
 	}
 
-	newTask, err := scheduler.CreateScheduledTask(
+	_, err := scheduler.CreateScheduledTask(
 		scheduler.TriggerType(radioOp),
 		uint8(monthlyDaySelected),
 		uint8(weekdaySelected),
@@ -248,10 +250,10 @@ func createScheduledBackup() {
 		} else if messageBoxReturnCode != IDCANCEL && messageBoxReturnCode != IDRETRY {
 			os.Exit(1)
 		}
+	} else {
+		initializeTable()
+		resetForm()
 	}
-	scheduledTasks = append(scheduledTasks, newTask)
-	updateTable()
-	resetForm()
 }
 
 func checkReady() {

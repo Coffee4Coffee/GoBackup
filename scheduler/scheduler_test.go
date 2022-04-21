@@ -198,29 +198,24 @@ func TestCreateTrigger(t *testing.T) {
 
 func TestCreateAction(t *testing.T) {
 	testcases := []struct {
-		src, dest  string
-		overwrite  bool
-		wantAction taskmaster.ExecAction
-		wantError  error
+		src, dest   string
+		backupLimit uint8
+		overwrite   bool
+		wantAction  taskmaster.ExecAction
+		wantError   error
 	}{
-		{`C:\test`, `Z:\backupme`, false, taskmaster.ExecAction{Args: fmt.Sprintf(`xcopy %v %v\%v /e /y /i /h /o /k /x;`, `C:\test`, `Z:\backupme`, `test`) + createToastScript(`C:\test`, `Z:\backupme`) + `cd ` + `Z:\backupme` + `; ` + `ren ` + `test` + ` "` + `test` + ` %date:~0,4%%date:~5,2%%date:~8,2%_%time:~0,2%%time:~3,2%%time:~6,2%` + `";`}, nil},
-		{`C:\test`, `Z:\backupme`, true, taskmaster.ExecAction{Args: fmt.Sprintf(`xcopy %v %v\%v /e /y /i /h /o /k /x;`, `C:\test`, `Z:\backupme`, `test`) + createToastScript(`C:\test`, `Z:\backupme`)}, nil},
-		{``, ``, true, taskmaster.ExecAction{Args: ``}, fmt.Errorf("createAction: failed to retrieve systemdrive: %w", errors.New("SYSTEMDRIVE not found"))},
+		{`C:\test`, `Z:\backupme`, 0, false, taskmaster.ExecAction{}, fmt.Errorf("createAction: failed to retrieve systemdrive: %w", errors.New("SYSTEMDRIVE not found"))},
 	}
 
-	os.Setenv("SYSTEMDRIVE", "C:")
-	for index, tc := range testcases {
-		if index == 2 {
-			os.Setenv("SYSTEMDRIVE", "")
-		}
+	oldSysDrive := os.Getenv("SYSTEMDRIVE")
+	os.Setenv("SYSTEMDRIVE", "")
+	for _, tc := range testcases {
+		result, err := createAction(tc.src, tc.dest, tc.backupLimit, tc.overwrite)
 
-		result, err := createAction(tc.src, tc.dest, tc.overwrite)
-
-		// TODO: Comparing errors is not working
-		if result.Args != tc.wantAction.Args && err != tc.wantError {
-			os.Setenv("SYSTEMDRIVE", "C:")
-			t.Errorf(`createAction(src, dest, overwrite) = %v, %v, %v, want match for tc.wantAction.Args: %v, result.wantAction.Args: %v, tc.error: %v, err: %v`, tc.src, tc.dest, tc.overwrite, tc.wantAction.Args, result.Args, tc.wantError, err)
+		if result != tc.wantAction && err != tc.wantError {
+			os.Setenv("SYSTEMDRIVE", oldSysDrive)
+			t.Errorf(`createAction(...) = %v, want match for %v; err: %v, want match for %v`, result, tc.wantAction, err, tc.wantError)
 		}
 	}
-	os.Setenv("SYSTEMDRIVE", "C:")
+	os.Setenv("SYSTEMDRIVE", oldSysDrive)
 }

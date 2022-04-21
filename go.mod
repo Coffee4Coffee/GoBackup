@@ -28,5 +28,4 @@ require (
 	github.com/sqweek/dialog v0.0.0-20220227145630-7a1c9e333fcf
 )
 
-// For local testing on linux (taskmaster has build constraints)
-// replace github.com/capnspacehook/taskmaster => ../../capnspacehook/taskmaster/
+replace github.com/capnspacehook/taskmaster => github.com/Coffee4Coffee/taskmaster v1.0.0

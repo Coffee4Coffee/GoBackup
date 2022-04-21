@@ -15,19 +15,21 @@ import (
 )
 
 var (
-	srcDir             string
-	destDir            string
-	weekdays           []string
-	monthlyDays        []string
-	hours              []string
-	scheduledTasks     taskmaster.RegisteredTaskCollection
-	tableData          []*g.TableRowWidget
-	overwrite          bool
-	disabled           bool
-	weekdaySelected    int32
-	monthlyDaySelected int32
-	hourSelected       int32
-	radioOp            int
+	srcDir              string
+	destDir             string
+	weekdays            []string
+	monthlyDays         []string
+	backupLimitOptions  []string
+	hours               []string
+	scheduledTasks      taskmaster.RegisteredTaskCollection
+	tableData           []*g.TableRowWidget
+	overwrite           bool
+	disabled            bool
+	weekdaySelected     int32
+	backupLimitSelected int32
+	monthlyDaySelected  int32
+	hourSelected        int32
+	radioOp             int
 
 	user32         = syscall.NewLazyDLL("user32.dll")
 	procMessageBox = user32.NewProc("MessageBoxW")
@@ -95,7 +97,7 @@ func initializeOptions() {
 	// Create Task (Form ready)
 	disabled = true
 
-	setDayOption()
+	backupLimitOptions = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "∞"}
 
 	// taskmaster.LastDayOfTheMonth does not work currently, leave it out
 	monthlyDays = make([]string, 31)
@@ -206,6 +208,22 @@ func setDayOption() g.Layout {
 	return g.Layout{}
 }
 
+func showLimitOption() g.Layout {
+	if !overwrite {
+		return g.Layout{
+			g.Row(
+				g.Label("limit"),
+			),
+			g.Row(
+				g.Combo("", backupLimitOptions[backupLimitSelected], backupLimitOptions, &backupLimitSelected).Size(110),
+				g.Tooltip("Set a limit to the number of backups. Older backups are removed upon exceeding this limit"),
+			),
+		}
+	} else {
+		return g.Layout{}
+	}
+}
+
 func deleteScheduledBackup(index int) {
 	deleteFolder := false
 	if len(scheduledTasks) == 1 {
@@ -240,6 +258,7 @@ func createScheduledBackup() {
 		uint8(monthlyDaySelected),
 		uint8(weekdaySelected),
 		uint8(hourSelected),
+		uint8(backupLimitSelected+1),
 		srcDir,
 		destDir,
 		overwrite,
@@ -317,6 +336,7 @@ func loop() {
 						g.Combo("", hours[hourSelected], hours, &hourSelected).Size(100),
 						g.Checkbox("Overwrite", &overwrite),
 						g.Tooltip("Overwrite the previous backup folder with a new one, or create a new backup folder with a timestamp on every execution"),
+						showLimitOption(),
 					),
 				),
 				g.Dummy(0, 30),

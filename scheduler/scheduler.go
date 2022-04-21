@@ -23,10 +23,9 @@ const (
 const fPath = "\\GoBackup"
 
 const (
-	toastTemplate                    = "ToastText02"
-	appTitle                         = "GoBackup"
-	toastExpirationTimeInMinutes int = 5
-	backupLimit                      = 0
+	toastTemplate                      = "ToastText02"
+	appTitle                           = "GoBackup"
+	toastExpirationTimeInMinutes uint8 = 5
 )
 
 func parseTaskPath(src, dest string) string {
@@ -98,7 +97,7 @@ func createTrigger(tType TriggerType, dMonth, dWeek, dHour uint8) (taskmaster.Tr
 	}
 }
 
-func createAction(src, dest string, overwrite bool) (taskmaster.ExecAction, error) {
+func createAction(src, dest string, backupLimit uint8, overwrite bool) (taskmaster.ExecAction, error) {
 	r := regexp.MustCompile(`[^\\]+$`)
 	folder := r.FindString(src)
 
@@ -132,7 +131,7 @@ func GetAllScheduledTasks() (taskmaster.RegisteredTaskCollection, error) {
 	return tFolder.RegisteredTasks, nil
 }
 
-func CreateScheduledTask(tType TriggerType, dMonth, dWeek, dHour uint8, src, dest string, overwrite bool) (taskmaster.RegisteredTask, error) {
+func CreateScheduledTask(tType TriggerType, dMonth, dWeek, dHour, backupLimit uint8, src, dest string, overwrite bool) (taskmaster.RegisteredTask, error) {
 	conn, err := taskmaster.Connect()
 	if err != nil {
 		return taskmaster.RegisteredTask{}, err
@@ -147,7 +146,7 @@ func CreateScheduledTask(tType TriggerType, dMonth, dWeek, dHour uint8, src, des
 	}
 	def.AddTrigger(trigger)
 
-	action, err := createAction(src, dest, overwrite)
+	action, err := createAction(src, dest, backupLimit, overwrite)
 	if err != nil {
 		return taskmaster.RegisteredTask{}, &ErrCreateTaskFailure{Inner: err, Message: "failed to create action"}
 	}

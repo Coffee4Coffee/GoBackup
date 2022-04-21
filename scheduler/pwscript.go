@@ -2,7 +2,10 @@ package scheduler
 
 import "fmt"
 
-func createPwScript(src, dest, folder, appTitle string, backupLimit, toastExpirationTimeInMinutes int, overwrite bool) string {
+func createPwScript(src, dest, folder, appTitle string, backupLimit, toastExpirationTimeInMinutes uint8, overwrite bool) string {
+	if backupLimit >= 10 {
+		backupLimit = 0
+	}
 	return fmt.Sprintf(`
 	function Copy-Folder($src, $dest) {
 		xcopy $src $destPath /e /y /i /h /o /k /x;
@@ -17,17 +20,18 @@ func createPwScript(src, dest, folder, appTitle string, backupLimit, toastExpira
 		}
 		return $true
 	}
-	function Remove-Backup($backupLimit, $folderName) {
-		$searchPattern = $folderName + '-' + '20[0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9][0-9][0-9]';
-		$backupFolderArray = Get-ChildItem -Directory $searchPattern | Sort-Object CreationTime;
+	function Remove-Backup($backupLimit, $dest, $folderName) {
+		$searchPattern = $dest + '\' + $folderName + '-' + '20[0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9][0-9][0-9]';
+		$backupFolderArray = Get-ChildItem -Path $searchPattern | Sort-Object CreationTime;
 		if(($backupFolderArray.length - $backupLimit) -GT 0) {
 			try {
 				$shouldDelete = $backupFolderArray.length - $backupLimit;
 				for ($index = 0; $index -lt $backupFolderArray.length - $backupLimit; $index++) {
+					$deletePath = $dest + '\' + $backupFolderArray[$index].Name
 					$partiallyDeleted = $index;
 					$partiallyDeleted;
 					$shouldDelete;
-					Remove-Item $backupFolderArray[$index].Name -Recurse -Confirm:$false;
+					Remove-Item -Path $deletePath -Recurse -Confirm:$false;
 				}
 			} catch {
 				return $false
@@ -144,7 +148,7 @@ func createPwScript(src, dest, folder, appTitle string, backupLimit, toastExpira
 			Show-Toast $xcopyErrorCode $src $dest $overwrite $renameOk $true -appTitle $apptitle -toastExpirationInMinutes $toastExpirationInMinutes;
 			return
 		}
-		$deleted = Remove-Backup $backupLimit $folderName;
+		$deleted = Remove-Backup $backupLimit $dest $folderName;
 		$deleteOk = $deleted[-1];
 		$shouldHaveDeleted = $deleted[-2];
 		$partiallyDeleted = $deleted[-3];

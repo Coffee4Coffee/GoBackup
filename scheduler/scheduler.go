@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -164,7 +165,16 @@ func CreateScheduledTask(tType TriggerType, dMonth, dWeek, dHour, backupLimit ui
 	def.Settings.StopIfGoingOnBatteries = false
 	def.Settings.WakeToRun = false
 
-	def.RegistrationInfo.Documentation = src + `|` + dest
+	// TODO: Create a type for this
+	limit := strconv.Itoa(int(backupLimit))
+	if overwrite {
+		limit = "-"
+	}
+	ov := "No"
+	if overwrite {
+		ov = "Yes"
+	}
+	def.RegistrationInfo.Documentation = src + `|` + dest + `|` + limit + `|` + ov
 
 	createdTask, _, err := conn.CreateTask(fPath+"\\"+parseTaskPath(src, dest), def, true)
 	if err != nil {

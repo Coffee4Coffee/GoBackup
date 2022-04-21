@@ -87,6 +87,7 @@ func resetForm() {
 	destDir = ""
 	monthlyDaySelected = 0
 	weekdaySelected = 0
+	backupLimitSelected = 0
 	overwrite = false
 	hourSelected = 0
 	radioOp = 0
@@ -143,12 +144,16 @@ func updateTable() {
 		doc := strings.Split(task.Definition.RegistrationInfo.Documentation, "|")
 		srcPath := doc[0]
 		destPath := doc[1]
+		overwrite := doc[2]
+		limit := doc[3]
 		tableData = append(tableData, g.TableRow(
 			g.Label(srcPath),
 			g.Tooltip(srcPath),
 			g.Label(destPath),
 			g.Tooltip(destPath),
 			g.Label(getTriggerIntervalType(task.Definition.Triggers[0])),
+			g.Label(limit),
+			g.Label(overwrite),
 			g.Label(task.NextRunTime.Format("2006-01-02 15:04:05")),
 			g.Label(task.LastRunTime.Format("2006-01-02 15:04:05")),
 			g.Label(strconv.Itoa(int(task.MissedRuns))),
@@ -354,6 +359,8 @@ func loop() {
 					g.TableColumn("Src").Flags(g.TableColumnFlagsWidthStretch),
 					g.TableColumn("Dest").Flags(g.TableColumnFlagsWidthFixed),
 					g.TableColumn("Time interval").Flags(g.TableColumnFlagsWidthFixed),
+					g.TableColumn("Overwrite").Flags(g.TableColumnFlagsWidthFixed),
+					g.TableColumn("Limit").Flags(g.TableColumnFlagsWidthFixed),
 					g.TableColumn("Next Run Time").Flags(g.TableColumnFlagsWidthFixed),
 					g.TableColumn("Last Run Time").Flags(g.TableColumnFlagsWidthFixed),
 					g.TableColumn("Missed Runs").Flags(g.TableColumnFlagsWidthFixed),
